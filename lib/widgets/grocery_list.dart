@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shoppi_list/data/categories.dart';
+import 'package:shoppi_list/models/category.dart';
 
 import 'package:shoppi_list/models/grocery_item.dart';
 import 'package:shoppi_list/widgets/new_item.dart';
@@ -34,8 +35,15 @@ class _GroceryListState extends State<GroceryList> {
 
     if (response.statusCode >= 400) {
       setState(() {
-        _error = 'Failed to fect data try again.Please try again later';
+        _error = 'Failed to fetch data. Please try again later.';
       });
+    }
+    //handle empty error
+    if (response.body == null) {
+      setState(() {
+        _isLoading = false;
+      });
+      return;
     }
 
     final Map<String, dynamic> listData = json.decode(response.body);
@@ -81,13 +89,16 @@ class _GroceryListState extends State<GroceryList> {
     setState(() {
       _groceryItems.remove(item);
     });
+
     final url = Uri.https(
       'flutterbeginnerforms-default-rtdb.firebaseio.com',
       'shopping-list/${item.id}.json',
     );
+
     final response = await http.delete(url);
+
     if (response.statusCode >= 400) {
-      //optional: show error message
+      // Optional: Show error message
       setState(() {
         _groceryItems.insert(index, item);
       });
@@ -99,10 +110,9 @@ class _GroceryListState extends State<GroceryList> {
     Widget content = const Center(child: Text('No items added yet.'));
 
     if (_isLoading) {
-      content = const Center(
-        child: CircularProgressIndicator(),
-      );
+      content = const Center(child: CircularProgressIndicator());
     }
+
     if (_groceryItems.isNotEmpty) {
       content = ListView.builder(
         itemCount: _groceryItems.length,
@@ -127,9 +137,7 @@ class _GroceryListState extends State<GroceryList> {
     }
 
     if (_error != null) {
-      content = Center(
-        child: Text(_error!),
-      );
+      content = Center(child: Text(_error!));
     }
 
     return Scaffold(
